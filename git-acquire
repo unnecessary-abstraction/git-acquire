@@ -8,6 +8,6 @@ import sys
 src_path = join(dirname(__file__), "src")
 sys.path.insert(0, src_path)
 
-import git_acquire  # noqa: E402
+from git_acquire.__main__ import main  # noqa: E402
 
-git_acquire.main()
+main()
