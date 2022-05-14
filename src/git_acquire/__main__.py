@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import logging
 
 from . import __progname__, __description__, __version__
 from .acquire import Acquisition
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(prog=__progname__, description=__description__)
     parser.add_argument(
         "--version", action="version", version=f"{__progname__} {__version__}"
@@ -21,10 +22,31 @@ def main():
     parser.add_argument(
         "-l", "--local-path", help="Local path in which to perform the checkout"
     )
+    parser.add_argument(
+        "-p",
+        "--patch",
+        metavar="PATCH",
+        dest="patches",
+        action="append",
+        help=(
+            "Apply patch(es) to the git repository after checkout. "
+            "May be specified multiple times to apply several patches in order"
+        ),
+    )
     parser.add_argument("source", help="Source URI to clone or fetch from")
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    a = Acquisition(args.source, refspec=args.refspec, local_path=args.local_path)
+
+def main():
+    logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
+    args = parse_args()
+
+    a = Acquisition(
+        args.source,
+        refspec=args.refspec,
+        local_path=args.local_path,
+        patches=args.patches,
+    )
     a.acquire()
 
 
