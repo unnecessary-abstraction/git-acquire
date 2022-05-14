@@ -5,6 +5,16 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # ChangeLog for git-acquire
 
+## 0.0.2
+
+Internal fixup release.
+
+* Fix handling of empty patches list.
+
+* Install git-acquire command.
+
+* Improve release automation.
+
 ## 0.0.1
 
 Initial internal release for testing.
