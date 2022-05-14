@@ -15,11 +15,11 @@ def default_local_path(source):
 
 
 class Acquisition:
-    def __init__(self, source, refspec="main", local_path=None, patches=[]):
+    def __init__(self, source, refspec="main", local_path=None, patches=None):
         self.source = source
         self.refspec = refspec
         self.local_path = local_path or default_local_path(source)
-        self.patches = patches
+        self.patches = patches or []
 
     def acquire(self):
         logging.info(f"Acquiring '{self.source}'")
