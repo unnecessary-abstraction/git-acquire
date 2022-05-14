@@ -38,3 +38,19 @@ def clean(c):
 def test(c):
     """Check the code for errors"""
     c.run('PYTHONPATH="$(realpath src):${PYTHONPATH}" pytest tests')
+
+
+@task
+def release(c, version):
+    """Release a version of the project"""
+    clean(c)
+    c.run(
+        f"sed -i 's/^\\(__version__ =\\).*$/\\1 \"{version}\"/' src/git_acquire/__init__.py"
+    )
+    c.run(f"git commit -a -s -m 'Release {version}'")
+    build(c)
+    c.run(f"echo git-acquire {version} > dist/RELEASE_NOTES.txt")
+    c.run(f"markdown-extract -n '^{version}' ChangeLog.md >> dist/RELEASE_NOTES.txt")
+    c.run(f"git tag -a -F dist/RELEASE_NOTES.txt 'v{version}' HEAD")
+    with c.cd("dist"):
+        c.run("sha256sum * > SHA256SUMS")
