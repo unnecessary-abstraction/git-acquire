@@ -54,3 +54,8 @@ def release(c, version):
     c.run(f"git tag -a -F dist/RELEASE_NOTES.txt 'v{version}' HEAD")
     with c.cd("dist"):
         c.run("sha256sum * > SHA256SUMS")
+    c.run(f"glab release create v{version} -F dist/RELEASE_NOTES.txt dist/*")
+    c.run(
+        "twine upload --config-file .pypirc -r gitlab "
+        f"dist/git-acquire-{version}.tar.gz dist/git_acquire-{version}-py3-none-any.whl"
+    )
