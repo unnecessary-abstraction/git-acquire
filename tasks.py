@@ -48,10 +48,13 @@ def release(c, version):
         f"sed -i 's/^\\(__version__ =\\).*$/\\1 \"{version}\"/' src/git_acquire/__init__.py"
     )
     c.run(f"git commit -a -s -m 'Release {version}'")
+    release_commit = c.run("git rev-parse HEAD").stdout.strip()
+    c.run(f"git push origin {release_commit}:refs/heads/release")
     build(c)
     c.run(f"echo git-acquire {version} > dist/RELEASE_NOTES.txt")
     c.run(f"markdown-extract -n '^{version}' ChangeLog.md >> dist/RELEASE_NOTES.txt")
     c.run(f"git tag -a -F dist/RELEASE_NOTES.txt 'v{version}' HEAD")
+    c.run(f"git push origin v{version}")
     with c.cd("dist"):
         c.run("sha256sum * > SHA256SUMS")
     c.run(f"glab release create v{version} -F dist/RELEASE_NOTES.txt dist/*")
