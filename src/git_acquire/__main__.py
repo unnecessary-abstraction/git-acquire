@@ -33,6 +33,9 @@ def parse_args():
             "May be specified multiple times to apply several patches in order"
         ),
     )
+    parser.add_argument(
+        "-m", "--mirror-root", help="Root directory of a tree of mirror repositories"
+    )
     parser.add_argument("source", help="Source URI to clone or fetch from")
     return parser.parse_args()
 
@@ -46,6 +49,7 @@ def main():
         refspec=args.refspec,
         local_path=args.local_path,
         patches=args.patches,
+        mirror_root=args.mirror_root,
     )
     a.acquire()
 
