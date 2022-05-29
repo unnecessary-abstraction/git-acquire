@@ -31,7 +31,9 @@ class Acquisition:
                 self.mirror_path = mirror_path
 
     def acquire(self):
-        logging.info(f"Acquiring '{self.source}'")
+        logging.info(f"Acquiring from '{self.source}' into '{self.local_path}'")
+        if self.mirror_path:
+            logging.info(f"Using mirror '{self.mirror_path}'")
         if os.path.exists(self.local_path):
             self.do_fetch()
         else:
@@ -40,17 +42,19 @@ class Acquisition:
         self.do_patch()
 
     def add_remote(self, remote_name, remote_url):
+        logging.debug(f"Adding remote '{remote_name}' with URL '{remote_url}'")
         subprocess.run(
             ["git", "remote", "add", remote_name, remote_url],
             cwd=self.local_path,
             check=True,
         )
+        logging.debug(f"Fetching remote '{remote_name}'")
         subprocess.run(
             ["git", "fetch", "-q", remote_name], cwd=self.local_path, check=True
         )
 
     def do_clone(self):
-        logging.info(f"Cloning into '{self.local_path}'")
+        logging.debug(f"Initializing git repository in '{self.local_path}'")
         subprocess.run(["git", "init", "-q", self.local_path], check=True)
         if self.mirror_path:
             self.add_remote("mirror", self.mirror_path)
@@ -63,23 +67,24 @@ class Acquisition:
             capture_output=True,
         )
         if rc.returncode != 0:
-            # Remote doesn't currently exist
+            logging.debug(f"Remote '{remote_name}' doesn't exist")
             return self.add_remote(remote_name, remote_url)
 
         current_remote_url = rc.stdout.decode("utf-8").strip()
+        logging.debug(f"Remote '{remote_name}' has URL '{current_remote_url}'")
         if current_remote_url != remote_url:
-            logging.info(f"Replacing {remote_name} URL, was '{current_remote_url}'")
+            logging.debug(f"Updating remote '{remote_name}' URL to '{remote_url}'")
             subprocess.run(
                 ["git", "remote", "set-url", remote_name, remote_url],
                 cwd=self.local_path,
                 check=True,
             )
+        logging.debug(f"Fetching remote '{remote_name}'")
         subprocess.run(
             ["git", "fetch", "-q", remote_name], cwd=self.local_path, check=True
         )
 
     def do_fetch(self):
-        logging.info(f"Fetching in '{self.local_path}'")
         if self.mirror_path:
             self.update_remote("mirror", self.mirror_path)
         self.update_remote("origin", self.source)
@@ -110,7 +115,7 @@ class Acquisition:
                 check=True,
             )
         else:
-            logging.debug("Assuming refspec is a commit hash")
+            logging.debug("Assuming refspec is a commit hash or tag")
             subprocess.run(
                 ["git", "checkout", "-q", "--detach", self.refspec],
                 cwd=self.local_path,
@@ -119,8 +124,9 @@ class Acquisition:
 
     def do_patch(self):
         for patch in self.patches:
-            fullpath = os.path.abspath(patch)
-            logging.info(f"Applying patch '{fullpath}'")
+            logging.info(f"Applying patch '{patch}'")
             subprocess.run(
-                ["git", "am", "-q", fullpath], cwd=self.local_path, check=True
+                ["git", "am", "-q", os.path.abspath(patch)],
+                cwd=self.local_path,
+                check=True,
             )

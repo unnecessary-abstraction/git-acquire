@@ -36,13 +36,18 @@ def parse_args():
     parser.add_argument(
         "-m", "--mirror-root", help="Root directory of a tree of mirror repositories"
     )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show verbose output"
+    )
     parser.add_argument("source", help="Source URI to clone or fetch from")
     return parser.parse_args()
 
 
 def main():
-    logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
+    logging.basicConfig(format="%(message)s", level=logging.INFO)
     args = parse_args()
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     a = Acquisition(
         args.source,
