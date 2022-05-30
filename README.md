@@ -5,11 +5,13 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # git-acquire
 
+[<img align=right src="https://www.sancloud.co.uk/wp-content/uploads/2016/09/sancloud_and_address_web.png">](https://www.sancloud.com/)
+
 Efficient acquisition of a git branch, tag or commit with the option to apply
-local patches.
+local patches. Brought to you by [SanCloud Ltd](https://www.sancloud.com/).
 
 "Never spend more for an acquisition than you have to." - Ferengi rules of
-acquisition
+acquisition.
 
 ## Usage
 
