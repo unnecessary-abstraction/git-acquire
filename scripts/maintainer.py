@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -21,8 +22,10 @@ def do_build(args):
 
 
 def do_clean(args):
-    shutil.rmtree("dist")
-    shutil.rmtree("src/git_acquire.egg-info")
+    if os.path.exists("dist"):
+        shutil.rmtree("dist")
+    if os.path.exists("src/git_acquire.egg-info"):
+        shutil.rmtree("src/git_acquire.egg-info")
 
 
 def do_release(args):
@@ -31,17 +34,20 @@ def do_release(args):
         text = re.sub(r"(__version__ =).*\n", rf'\1 "{args.version}"\n', f.read())
         f.seek(0)
         f.write(text)
+        f.truncate()
     run(f'git commit -asm "Release {args.version}"')
     release_commit = capture("git rev-parse HEAD").strip()
     run(f"git push origin {release_commit}:refs/heads/release")
+    run(f"git push gh {release_commit}:refs/heads/release")
     do_build(args)
-    with open("dist/RELEASE_NOTES.txt") as f:
-        f.write(f"mirrorshades {args.version}\n")
+    with open("dist/RELEASE_NOTES.txt", "w") as f:
+        f.write(f"git-acquire {args.version}\n")
         text = capture(f"markdown-extract -n ^{args.version} ChangeLog.md")
         f.write(text)
     run(f"git tag -a -F dist/RELEASE_NOTES.txt v{args.version} HEAD")
     run(f"git push origin v{args.version}")
-    with open("dist/SHA256SUMS") as f:
+    run(f"git push gh v{args.version}")
+    with open("dist/SHA256SUMS", "w") as f:
         text = capture(
             "sha256sum RELEASE_NOTES.txt "
             f"git-acquire-{args.version}.tar.gz git_acquire-{args.version}-py3-none-any.whl",
@@ -50,10 +56,18 @@ def do_release(args):
         f.write(text)
     if args.sign:
         run("gpg --detach-sign -a dist/SHA256SUMS")
-    run(f"glab release create v{args.version} -F dist/RELEASE_NOTES.txt dist/*")
+    if not args.no_gitlab:
+        run(f"glab release create v{args.version} -F dist/RELEASE_NOTES.txt dist/*")
+        run(
+            "twine upload -r gitlab "
+            f"dist/git-acquire-{args.version}.tar.gz "
+            f"dist/git_acquire-{args.version}-py3-none-any.whl"
+        )
+    run(f"gh release create v{args.version} -F dist/RELEASE_NOTES.txt dist/*")
     run(
-        "twine upload --config-file .pypirc -r gitlab "
-        f"dist/git-acquire-{args.version}.tar.gz dist/git_acquire-{args.version}-py3-none-any.whl"
+        "twine upload "
+        f"dist/git-acquire-{args.version}.tar.gz "
+        f"dist/git_acquire-{args.version}-py3-none-any.whl"
     )
 
 
@@ -62,11 +76,17 @@ def do_set_version(args):
         text = re.sub(r"(__version__ =).*\n", rf'\1 "{args.version}"\n', f.read())
         f.seek(0)
         f.write(text)
+        f.truncate()
     run(f'git commit -asm "Bump version to {args.version}"')
+
+
+def do_no_command(args):
+    print("Missing command! Try `./scripts/maintainer.py --help`")
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.set_defaults(cmd_fn=do_no_command)
     subparsers = parser.add_subparsers(
         dest="cmd", title="Maintainer commands", metavar="command"
     )
@@ -86,6 +106,11 @@ def parse_args():
     release_cmd.add_argument("version", help="Version string for the new release")
     release_cmd.add_argument(
         "-s", "--sign", action="store_true", help="Sign release with gpg"
+    )
+    release_cmd.add_argument(
+        "--no-gitlab",
+        action="store_true",
+        help="Disable push to SanCloud gitlab instance",
     )
 
     set_version_cmd = subparsers.add_parser(
