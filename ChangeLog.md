@@ -5,6 +5,16 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # ChangeLog for git-acquire
 
+## 0.1.0
+
+Initial public release.
+
+* Support use of local mirrors to accelerate clone or fetch.
+
+* Improve output and support verbose mode.
+
+* Switch from `invoke` to a maintainer script for automation of maintainer tasks.
+
 ## 0.0.2
 
 Internal fixup release.
